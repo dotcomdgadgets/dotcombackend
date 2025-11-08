@@ -1,8 +1,6 @@
 import axios from "axios";
 import Location from "../models/locationModel.js";
 
-// @desc Save user location with address
-// @route POST /api/location
 export const saveLocation = async (req, res) => {
   try {
     const { lat, lon } = req.body;
@@ -13,12 +11,19 @@ export const saveLocation = async (req, res) => {
 
     // ✅ Fetch address from OpenCage API
     const apiKey = process.env.OPENCAGE_API_KEY;
-    const geoUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`;
+    if (!apiKey) {
+      console.error("❌ OPENCAGE_API_KEY missing in environment variables");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
 
+    const geoUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`;
     const response = await axios.get(geoUrl);
+
+    console.log("🛰️ Geocoding response:", response.data.results[0]);
+
     const formattedAddress = response.data.results[0]?.formatted || "Unknown location";
 
-    // ✅ Save location + address
+    // ✅ Save to MongoDB
     const location = new Location({
       latitude: lat,
       longitude: lon,
@@ -32,12 +37,11 @@ export const saveLocation = async (req, res) => {
       location,
     });
   } catch (error) {
-    console.error("Error saving location:", error.message);
+    console.error("❌ Error saving location:", error.message);
     res.status(500).json({ message: "Error saving location" });
   }
 };
 
-// ✅ NEW: Get all locations
 export const getLocations = async (req, res) => {
   try {
     const locations = await Location.find().sort({ createdAt: -1 });
