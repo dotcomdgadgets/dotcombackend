@@ -19,3 +19,15 @@ export const saveLocation = async (req, res) => {
     res.status(500).json({ message: "Error saving location" });
   }
 };
+
+
+// ✅ NEW: Get all locations
+export const getLocations = async (req, res) => {
+  try {
+    const locations = await Location.find().sort({ createdAt: -1 });
+    res.json(locations);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch locations" });
+  }
+};
