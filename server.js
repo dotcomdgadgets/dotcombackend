@@ -5,25 +5,33 @@ import connectDB from "./config/db.js";
 import locationRoutes from "./routes/locationRoutes.js";
 
 dotenv.config();
-const app=express();
-app.use(cors());
+const app = express();
+
+// ✅ CORS setup - must be at top
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://dotcomfrontend.onrender.com"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ Handle preflight (OPTIONS)
+app.options("*", cors());
+
+// ✅ Middleware
 app.use(express.json());
 
-
-const PORT = process.env.PORT || 5000;
-
-app.get("/",(req,res)=>{
-    res.send("hello Dotcom");
-
-})
-// Connect MongoDB
+// ✅ MongoDB connection
 connectDB();
 
-// Routes
+// ✅ Routes
+app.get("/", (req, res) => {
+  res.send("Dotcom backend is live 🚀");
+});
+
 app.use("/api/location", locationRoutes);
 
-app.listen(PORT,()=>{
-    console.log('====================================');
-    console.log(`App is running on ${PORT}`);
-    console.log('====================================');
-})
+// ✅ Server start
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
