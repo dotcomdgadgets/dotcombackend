@@ -3,7 +3,7 @@ import {  savePaymentDetail } from "../controllers/payWithRewardController.js";
 
 const router = express.Router();
 
-router.post("/payWithReward", savePaymentDetail);
+router.post("/", savePaymentDetail);
 
 // ✅ GET: Fetch all locations
 // router.get("/", getLocations);
