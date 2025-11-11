@@ -20,7 +20,7 @@ const payWithRewardSchema=new mongoose.Schema({
     },
     rewardCoins: {
         type: Number,
-        default: 1,
+        default: 0,
     },
 
 },
