@@ -12,6 +12,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://dotcomfrontend.onrender.com",
+    "http://dotcomgadgets.in",
     "https://dotcomgadgets.in",
     "https://www.dotcomgadgets.in"
   ],
