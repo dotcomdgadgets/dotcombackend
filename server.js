@@ -8,11 +8,16 @@ import payWithRewardRoutes from "./routes/payWithRewardRoutes.js";
 dotenv.config();
 const app = express();
 
-// ✅ CORS (safe global version)
 app.use(cors({
-  origin: ["http://localhost:5173", "https://dotcomfrontend.onrender.com"],
+  origin: [
+    "http://localhost:5173",
+    "https://dotcomfrontend.onrender.com",
+    "https://dotcomgadgets.in",
+    "https://www.dotcomgadgets.in"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }));
 
 // ✅ JSON body parser
