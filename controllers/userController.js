@@ -1,19 +1,21 @@
-import user from "../models/userModel.js";
+import User from "../models/userModel.js";
+import bcrypt from "bcryptjs";
 
 export const signup=async(req,res)=>{
     try{
-        const {name, email,password}=req.boby;
+        const { name, email, password } = req.body;
+
         if(!name || !email || !password){
             return res.status(400).json({message:"All fields are required"});
         }
-        const existingUser= await user.findOne({email});
+        const existingUser= await User.findOne({email});
         if(existingUser){
             return res.status(400).json({message:"User alreay registered"});
         }
          // 3️⃣ Hash password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser= await user.create({
+        const newUser= await User.create({
             name,
             email,
             password:hashedPassword,
@@ -25,9 +27,8 @@ export const signup=async(req,res)=>{
 
 
     }catch(err){
-        console.log('====================================');
-        console.log(err);
-        console.log('====================================');
+        console.error("Signup error:", err);
+        res.status(500).json({ message: "Server Error" });
     }
 
 }
