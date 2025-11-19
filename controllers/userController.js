@@ -70,13 +70,13 @@ export const login = async (req, res) => {
     }
 
     // generate token (optional, keep short secret for debug)
-    const token = jwt.sign({ id: user._id, email: user.email, role: user.role,rewardCoins: user.rewardCoins }, process.env.JWT_SECRET || "debug_secret", { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id, email: user.email, role: user.role, }, process.env.JWT_SECRET || "debug_secret", { expiresIn: "7d" });
 
     console.log("Login success, sending response");
     return res.status(200).json({
       message: "Login successful!",
       token,
-      user: { id: user._id, name: user.name, email: user.email,role: user.role }
+      user: { id: user._id, name: user.name, email: user.email,role: user.role,rewardCoins: user.rewardCoins }
     });
   } catch (err) {
     console.error("Login error (stack):", err && err.stack ? err.stack : err);
