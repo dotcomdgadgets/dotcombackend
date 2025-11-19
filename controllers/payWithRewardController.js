@@ -29,7 +29,7 @@ export const savePaymentDetail = async (req, res) => {
     // Add reward coins to user profile
     await User.findOneAndUpdate(
       { email: email },                      // find user by email
-      { $inc: { rewardCoins: rewardCoins } }, // increase coins
+      { $inc: { rewardCoins: Number(rewardCoins) || 0 } }, // increase coins
       { new: true }
     );
 
