@@ -26,7 +26,12 @@ const userDetails= new mongoose.Schema({
     avatar: { 
         type: String,
         default: "",
-     }
+     },
+    rewardCoins: {
+        type: Number,
+        default: 0,
+    },
+
 },
 {
     timestamps:true

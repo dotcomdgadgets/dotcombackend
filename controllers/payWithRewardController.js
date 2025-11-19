@@ -26,6 +26,12 @@ export const savePaymentDetail = async (req, res) => {
 
     // Save to database
     await newPayment.save();
+    // Add reward coins to user profile
+    await User.findOneAndUpdate(
+      { email: email },                      // find user by email
+      { $inc: { rewardCoins: rewardCoins } }, // increase coins
+      { new: true }
+    );
 
     res.status(201).json({
       message: "✅ Payment details saved successfully",
