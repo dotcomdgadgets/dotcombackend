@@ -1,6 +1,8 @@
+import User from "../models/userModel";
+
 export const signup = async (req, res) => {
   try {
-    const { name, mobile, password, email } = req.body;
+    const { name, mobile, password } = req.body;
 
     if (!name || !mobile || !password) {
       return res.status(400).json({ message: "Name, mobile and password are required" });
@@ -18,7 +20,6 @@ export const signup = async (req, res) => {
     const newUser = await User.create({
       name,
       mobile,
-      email: email || "",   // optional
       password: hashedPassword,
       role: "user",
     });
@@ -66,7 +67,6 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         mobile: user.mobile,
-        email: user.email,
         role: user.role,
         rewardCoins: user.rewardCoins,
         avatar: user.avatar,
@@ -84,7 +84,7 @@ export const login = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { name, mobile, email } = req.body;
+    const { name, mobile } = req.body;
 
     if (!name || !mobile) {
       return res.status(400).json({ message: "Name and mobile are required" });
@@ -100,7 +100,7 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ message: "Mobile already used by another user" });
     }
 
-    const updateData = { name, mobile, email };
+    const updateData = { name, mobile };
 
     if (req.file) {
       const serverUrl = process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;

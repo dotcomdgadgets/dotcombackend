@@ -16,13 +16,6 @@ const userDetails = new mongoose.Schema(
       match: [/^[6-9]\d{9}$/, "Invalid mobile number"], // Indian mobile validation
     },
 
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      default: "",      // Email becomes optional
-    },
-
     password: {
       type: String,
       required: true,
