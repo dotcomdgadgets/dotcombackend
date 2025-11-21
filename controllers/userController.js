@@ -1,4 +1,6 @@
 import User from "../models/userModel.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const signup = async (req, res) => {
   try {
@@ -182,3 +184,10 @@ export const updateUserRole = async (req, res) => {
     return res.status(500).json({ message: "Server error while updating role" });
   }
 };
+
+
+
+
+
+
+
