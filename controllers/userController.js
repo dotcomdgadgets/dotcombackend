@@ -1,23 +1,25 @@
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import payWithReward from "../models/payWithRewardModels.js"; // ⭐ IMPORTANT
 
 export const signup = async (req, res) => {
   try {
     const { name, mobile, password } = req.body;
 
     if (!name || !mobile || !password) {
-      return res.status(400).json({ message: "Name, mobile and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Name, mobile and password are required" });
     }
 
-    // Check if mobile already exists
     const existingUser = await User.findOne({ mobile });
     if (existingUser) {
-      return res.status(400).json({ message: "Mobile number already registered" });
+      return res
+        .status(400)
+        .json({ message: "Mobile number already registered" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
@@ -27,18 +29,35 @@ export const signup = async (req, res) => {
       role: "user",
     });
 
+    // ⭐ Fetch all payments done before signup
+    const previousPayments = await payWithReward.find({ mobile });
+
+    // ⭐ Calculate total rewardCoins
+    const totalCoins = previousPayments.reduce(
+      (sum, record) => sum + Number(record.rewardCoins || 0),
+      0
+    );
+
+    // ⭐ Update user rewardCoins
+    if (totalCoins > 0) {
+      await User.findByIdAndUpdate(newUser._id, {
+        $set: { rewardCoins: totalCoins },
+      });
+    }
+
+    // ⭐ Final return (AFTER updating coins)
     return res.status(201).json({
       message: "Signup successful",
+      rewardCoinsAdded: totalCoins,
     });
 
   } catch (err) {
-  console.error("🔥 Signup Error:", err);  // FULL ERROR LOG
-  return res.status(500).json({
-    message: "Signup failed",
-    error: err.message,       // send real error
-  });
-}
-
+    console.error("🔥 Signup Error:", err);
+    return res.status(500).json({
+      message: "Signup failed",
+      error: err.message,
+    });
+  }
 };
 
 
