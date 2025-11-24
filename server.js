@@ -6,6 +6,8 @@ import connectDB from "./config/db.js";
 import locationRoutes from "./routes/locationRoutes.js";
 import payWithRewardRoutes from "./routes/payWithRewardRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+
 
 dotenv.config();
 const app = express();
