@@ -31,7 +31,9 @@ app.use(cors({
 app.use(express.json());
 
 // ⭐ HERE — Serve uploads folder
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/uploads", express.static(path.join(process.cwd(), "backend/uploads")));
+
 
 // Connect DB
 connectDB();
