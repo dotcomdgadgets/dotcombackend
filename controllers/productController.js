@@ -28,9 +28,11 @@ export const addProduct = async (req, res) => {
       message: "Product added successfully",
       product,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
+  } catch (err) {
+  console.log("🔥 PRODUCT ADD ERROR:", err);
+  res.status(500).json({ message: "Server error", error: err.message });
+}
+
 };
 
 export const getAllProducts = async (req, res) => {
