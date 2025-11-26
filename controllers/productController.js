@@ -1,4 +1,5 @@
 import Product from "../models/productModel.js";
+import { v2 as cloudinary } from "cloudinary";
 
 export const addProduct = async (req, res) => {
   try {
@@ -12,14 +13,18 @@ export const addProduct = async (req, res) => {
       return res.status(400).json({ message: "All fields required" });
     }
 
-    const serverUrl = process.env.SERVER_URL || `${req.protocol}://${req.get("host")}`;
+    // ⭐ Upload to Cloudinary
+    const uploadedImage = await cloudinary.uploader.upload(req.file.path, {
+      folder: "dotcom_products",
+    });
 
     const product = new Product({
       name,
       price,
       category,
       description,
-      image: `${serverUrl}/uploads/products/${req.file.filename}`,
+      image: uploadedImage.secure_url, // ⭐ Cloudinary URL
+      public_id: uploadedImage.public_id, // ⭐ Save public_id for delete
     });
 
     await product.save();
@@ -28,12 +33,13 @@ export const addProduct = async (req, res) => {
       message: "Product added successfully",
       product,
     });
-  } catch (err) {
-  console.log("🔥 PRODUCT ADD ERROR:", err);
-  res.status(500).json({ message: "Server error", error: err.message });
-}
 
+  } catch (err) {
+    console.log("🔥 PRODUCT ADD ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
+
 
 export const getAllProducts = async (req, res) => {
   try {
