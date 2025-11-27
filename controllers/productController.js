@@ -6,7 +6,7 @@ export const addProduct = async (req, res) => {
   try {
     console.log("REQ.FILE →", req.file);  // Debug log
 
-    if (!req.files || req.files.length === 0) {
+    if (!req.file || req.file.length === 0) {
       return res.status(400).json({ message: "At least one image is required" });
     }
 
