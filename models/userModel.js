@@ -1,7 +1,29 @@
 import mongoose from "mongoose";
 
 /* =========================
-   ✅ CART ITEM SCHEMA
+   ⭐ ADDRESS SCHEMA (SAFE)
+   - No "required" fields (prevents signup crash)
+   - Backend/front-end will validate required fields
+========================= */
+const addressSchema = new mongoose.Schema(
+  {
+    fullName: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    pincode: { type: String, trim: true },
+    state: { type: String, trim: true },
+    city: { type: String, trim: true },
+    houseNo: { type: String, trim: true },
+    area: { type: String, trim: true },
+    landmark: { type: String, trim: true },
+
+    isDefault: { type: Boolean, default: false },
+  },
+  { _id: true }
+);
+
+
+/* =========================
+   ⭐ CART ITEM SCHEMA
 ========================= */
 const cartItemModel = new mongoose.Schema(
   {
@@ -23,15 +45,16 @@ const cartItemModel = new mongoose.Schema(
     },
 
     priceAtThatTime: {
-      type: Number,   
+      type: Number,
       required: true,
     },
   },
   { _id: true }
 );
 
+
 /* =========================
-   ✅ USER SCHEMA
+   ⭐ USER SCHEMA
 ========================= */
 const userDetails = new mongoose.Schema(
   {
@@ -71,7 +94,13 @@ const userDetails = new mongoose.Schema(
       default: 0,
     },
 
-    // ✅ CLOUD CART (Flipkart Style)
+    // ⭐ USER ADDRESSES (Amazon-style)
+    addresses: {
+      type: [addressSchema],
+      default: [],
+    },
+
+    // ⭐ CLOUD CART (Flipkart-style)
     cart: {
       type: [cartItemModel],
       default: [],
@@ -81,6 +110,9 @@ const userDetails = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Prevent "OverwriteModelError"
+mongoose.models = {};
 
 const User = mongoose.model("userDetails", userDetails);
 export default User;
