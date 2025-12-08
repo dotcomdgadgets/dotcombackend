@@ -1,7 +1,26 @@
 import mongoose from "mongoose";
 
 /* =========================
-   ✅ CART ITEM SCHEMA
+   ✅ ADDRESS SCHEMA
+========================= */
+const addressSchema = new mongoose.Schema(
+  {
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
+    pincode: { type: String, required: true },
+    state: { type: String, required: true },
+    city: { type: String, required: true },
+    houseNo: { type: String, required: true },
+    area: { type: String, required: true },
+    landmark: { type: String },
+
+    isDefault: { type: Boolean, default: false },
+  },
+  { _id: true }
+);
+
+/* =========================
+   CART ITEM SCHEMA
 ========================= */
 const cartItemModel = new mongoose.Schema(
   {
@@ -23,7 +42,7 @@ const cartItemModel = new mongoose.Schema(
     },
 
     priceAtThatTime: {
-      type: Number,   // ✅ protects from price change issues
+      type: Number,
       required: true,
     },
   },
@@ -31,7 +50,7 @@ const cartItemModel = new mongoose.Schema(
 );
 
 /* =========================
-   ✅ USER SCHEMA
+   USER SCHEMA
 ========================= */
 const userDetails = new mongoose.Schema(
   {
@@ -71,7 +90,17 @@ const userDetails = new mongoose.Schema(
       default: 0,
     },
 
-    // ✅ CLOUD CART (Flipkart Style)
+    // =============================
+    // ⭐ USER ADDRESSES 
+    // =============================
+    addresses: {
+      type: [addressSchema],
+      default: [],
+    },
+
+    // =============================
+    // ⭐ CLOUD CART 
+    // =============================
     cart: {
       type: [cartItemModel],
       default: [],

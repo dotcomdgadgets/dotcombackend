@@ -206,6 +206,61 @@ export const updateUserRole = async (req, res) => {
 };
 
 
+// Address controller
+
+export const addAddress = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  const newAddress = req.body;
+
+  // if first address → make default
+  if (user.addresses.length === 0) {
+    newAddress.isDefault = true;
+  }
+
+  user.addresses.push(newAddress);
+  await user.save();
+
+  res.json({ addresses: user.addresses });
+};
+
+export const getAddresses = async (req, res) => {
+  const user = await User.findById(req.user._id);
+  res.json(user.addresses);
+};
+
+export const deleteAddress = async (req, res) => {
+  const user = await User.findById(req.user._id);
+  user.addresses = user.addresses.filter(
+    (a) => a._id.toString() !== req.params.id
+  );
+  await user.save();
+  res.json({ addresses: user.addresses });
+};
+
+export const updateAddress = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  const index = user.addresses.findIndex(
+    (a) => a._id.toString() === req.params.id
+  );
+
+  user.addresses[index] = { ...user.addresses[index], ...req.body };
+  await user.save();
+
+  res.json({ addresses: user.addresses });
+};
+
+export const setDefaultAddress = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  user.addresses.forEach((addr) => {
+    addr.isDefault = addr._id.toString() === req.params.id;
+  });
+
+  await user.save();
+  res.json({ addresses: user.addresses });
+};
 
 
 
