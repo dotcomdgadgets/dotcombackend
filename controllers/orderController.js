@@ -80,9 +80,10 @@ export const createOrder = async (req, res) => {
 =================================================== */
 export const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id }).sort({
-      createdAt: -1,
-    });
+    const orders = await Order.find({ user: req.user._id })
+  .populate("items.product")   // FIX: fetch product details
+  .sort({ createdAt: -1 });
+
 
     res.status(200).json({ orders });
   } catch (error) {
