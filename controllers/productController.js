@@ -47,14 +47,17 @@ export const addProduct = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    const { category } = req.query;
+    const { category,search } = req.query;
 
     let query = {};
 
     if (category) {
       query.category = category;
     }
-
+     // 🔹 Search filter (name)
+    if (search) {
+      query.name = { $regex: search, $options: "i" }; // case-insensitive
+    }
     const products = await Product.find(query).sort({ createdAt: -1 });
 
     res.status(200).json({ products });
