@@ -47,24 +47,32 @@ export const addProduct = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    const { category,search } = req.query;
+    const { category, search } = req.query;
 
     let query = {};
 
-    if (category) {
+    // ✅ CATEGORY FILTER
+    if (category && category.trim() !== "") {
       query.category = category;
     }
-     // 🔹 Search filter (name)
-    if (search) {
-      query.name = { $regex: search, $options: "i" }; // case-insensitive
+
+    // ✅ SEARCH FILTER (FIXED)
+    if (search && search.trim() !== "") {
+      query.name = {
+        $regex: search.trim(),
+        $options: "i", // case-insensitive
+      };
     }
+
     const products = await Product.find(query).sort({ createdAt: -1 });
 
     res.status(200).json({ products });
   } catch (err) {
+    console.error("Product fetch error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 
 
