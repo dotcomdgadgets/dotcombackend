@@ -47,12 +47,23 @@ export const addProduct = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.status(200).json({ message: "Products fetched", products });
+    const { category } = req.query;
+
+    let query = {};
+
+    if (category) {
+      query.category = category;
+    }
+
+    const products = await Product.find(query).sort({ createdAt: -1 });
+
+    res.status(200).json({ products });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+
 
 export const getSingleProduct = async (req, res) => {
   try {
