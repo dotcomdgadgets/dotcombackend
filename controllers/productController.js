@@ -9,9 +9,9 @@ export const addProduct = async (req, res) => {
       return res.status(400).json({ message: "At least one image is required" });
     }
 
-    const { name, price, category, description } = req.body;
+    const { name, price, category, description,hsnCode, gst, mrp } = req.body;
 
-    if (!name || !price || !category) {
+    if (!name || !price || !category || !hsnCode || !gst ||!mrp) {
       return res.status(400).json({ message: "All fields required" });
     }
 
@@ -24,6 +24,9 @@ export const addProduct = async (req, res) => {
       price,
       category,
       description,
+      hsnCode,
+      gst,
+      mrp,
       image: imageUrls,        // ✅ ARRAY
       public_id: publicIds,    // ✅ ARRAY
     });
