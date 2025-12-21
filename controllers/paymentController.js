@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import Order from "../models/orderModel.js";
+import User from "../models/userModel.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -29,15 +30,23 @@ export const createRazorpayOrder = async (req, res) => {
 /* ===========================
    VERIFY PAYMENT & SAVE ORDER
 =========================== */
+
+
 export const verifyPayment = async (req, res) => {
   try {
     const {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
-      orderData,
+      addressId,
+      totalAmount,
     } = req.body;
 
+    const userId = req.user._id;
+
+    /* =====================
+       1️⃣ VERIFY SIGNATURE
+    ===================== */
     const body = razorpayOrderId + "|" + razorpayPaymentId;
 
     const expectedSignature = crypto
@@ -49,20 +58,73 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: "Invalid payment signature" });
     }
 
-    // ✅ Create Order AFTER payment verified
-    const order = new Order({
-      ...orderData,
+    /* =====================
+       2️⃣ FETCH USER
+    ===================== */
+    const user = await User.findById(userId);
+
+    if (!user || user.cart.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    /* =====================
+       3️⃣ BUILD ITEMS SNAPSHOT
+    ===================== */
+    const items = user.cart.map((item) => ({
+      product: item.product,
+      quantity: item.quantity,
+      priceAtThatTime: item.priceAtThatTime,
+      size: item.size,
+    }));
+
+    /* =====================
+       4️⃣ ADDRESS SNAPSHOT
+    ===================== */
+    const address = user.addresses.id(addressId);
+    if (!address) {
+      return res.status(404).json({ message: "Address not found" });
+    }
+
+    const addressSnapshot = {
+      fullName: address.fullName,
+      phone: address.phone,
+      houseNo: address.houseNo,
+      area: address.area,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+      landmark: address.landmark || "",
+    };
+
+    /* =====================
+       5️⃣ CREATE ORDER
+    ===================== */
+    const order = await Order.create({
+      user: userId,
+      items,
+      address: addressSnapshot,
+      totalAmount,
       paymentMethod: "Online",
       paymentStatus: "Paid",
+      orderStatus: "Pending",
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
     });
 
-    await order.save();
+    /* =====================
+       6️⃣ CLEAR CART
+    ===================== */
+    user.cart = [];
+    await user.save();
 
-    res.status(201).json({ message: "Payment verified", order });
+    res.status(201).json({
+      message: "Payment verified & order created",
+      order,
+    });
   } catch (error) {
+    console.error("Verify payment error:", error);
     res.status(500).json({ message: "Payment verification failed" });
   }
 };
+

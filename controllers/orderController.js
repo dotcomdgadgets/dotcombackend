@@ -5,6 +5,7 @@ import User from "../models/userModel.js";
    ⭐ CREATE ORDER
    Called when user clicks "Place Order"
 =================================================== */
+
 export const createOrder = async (req, res) => {
   try {
     const userId = req.user._id;
