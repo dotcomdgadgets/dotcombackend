@@ -27,6 +27,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// ✅ REQUIRED FOR PREFLIGHT
+app.options("*", cors());
+
 // Middleware
 app.use(express.json());
 

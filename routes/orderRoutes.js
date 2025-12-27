@@ -32,3 +32,9 @@ router.get("/details/:id", authMiddleware, getOrderDetails);
 router.put("/update-status/:id", authMiddleware, checkAdmin, adminUpdateOrderStatus);
 
 export default router;
+
+
+
+
+
+
