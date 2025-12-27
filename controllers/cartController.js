@@ -74,19 +74,24 @@ export const addToCart = async (req, res) => {
 ============================ */
 export const getCart = async (req, res) => {
   try {
-    const cartItems = await cleanCart(req.user._id);
+    const user = await User.findById(req.user._id).populate("cart.product");
 
-    if (!cartItems) {
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(cartItems);
+    // 🔥 REMOVE CART ITEMS WITH DELETED PRODUCTS
+    user.cart = user.cart.filter(item => item.product !== null);
 
+    await user.save(); // persist cleanup
+
+    res.status(200).json(user.cart);
   } catch (err) {
-    console.error("GET CART ERROR:", err);
+    console.log("GET CART ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 /* ============================
    ✅ REMOVE FROM CART (productId)

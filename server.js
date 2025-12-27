@@ -16,7 +16,7 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://dotcomfrontend.onrender.com",
+    "https://dotcombackend-xu8o.onrender.com",
     "http://dotcomgadgets.in",
     "https://dotcomgadgets.in",
     "http://www.dotcomgadgets.in",

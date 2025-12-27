@@ -94,15 +94,34 @@ export const getSingleProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
   try {
-    const deleted = await Product.findByIdAndDelete(req.params.id);
+    const productId = req.params.id;
 
-    if (!deleted) return res.status(404).json({ message: "Product not found" });
+    // ✅ 1. Delete product
+    const deleted = await Product.findByIdAndDelete(productId);
 
-    res.status(200).json({ message: "Product deleted successfully" });
+    if (!deleted) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // ✅ 2. REMOVE this product from ALL user carts
+    await User.updateMany(
+      {},
+      { $pull: { cart: { product: productId } } }
+    );
+
+    res.status(200).json({
+      message: "Product deleted and removed from all carts",
+    });
+
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("DELETE PRODUCT ERROR:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 };
+
 
 
 
