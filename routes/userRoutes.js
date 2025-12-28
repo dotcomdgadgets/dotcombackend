@@ -10,6 +10,7 @@ import {
     updateAddress,
     deleteAddress,
     deleteUser,
+    changePassword,
  } from "../controllers/userController.js";
 import express from "express";
 import { authMiddleware } from "../middleware/auth.js";
@@ -20,9 +21,11 @@ const router=express.Router();
 
 router.post("/signup",signup);
 router.post("/login",login);
-router.get("/allUser",allUser);
+router.get("/allUser",authMiddleware,checkAdmin,allUser);
 router.put("/update-role",authMiddleware,checkAdmin,updateUserRole);
 router.delete("/delete-user/:id",authMiddleware,checkAdmin,deleteUser);
+router.put("/change-password", authMiddleware, changePassword);
+
 
 router.put("/update-profile", authMiddleware, uploadAvatar.single("avatar"), updateProfile);
 router.get("/me", authMiddleware, getMyProfile);
