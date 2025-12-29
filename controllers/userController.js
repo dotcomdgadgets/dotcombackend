@@ -2,6 +2,9 @@ import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import payWithReward from "../models/payWithRewardModels.js"; // ⭐ IMPORTANT
+import Otp from "../models/otpModel.js";
+import axios from "axios";
+
 
 export const signup = async (req, res) => {
   try {
@@ -326,4 +329,123 @@ export const changePassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// WhatsApp OTP via Gupshup
+export const sendOtp = async (req, res) => {
+  try {
+    const { mobile } = req.body;
+
+    const user = await User.findOne({ mobile });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 🔒 Remove old OTPs (anti-bruteforce)
+    await Otp.deleteMany({ mobile });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Otp.create({
+      mobile,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      verified: false,
+    });
+
+    // ✅ CORRECT axios request
+    await axios.post(
+      "https://api.gupshup.io/wa/api/v1/msg",
+      new URLSearchParams({
+        channel: "whatsapp",
+        source: process.env.GUPSHUP_SOURCE,
+        destination: mobile,
+        message: JSON.stringify({
+          type: "text",
+          text: `Your OTP for password reset is ${otp}. Valid for 5 minutes.`,
+        }),
+      }),
+      {
+        headers: {
+          apikey: process.env.GUPSHUP_API_KEY,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    res.json({ message: "OTP sent on WhatsApp" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "OTP send failed" });
+  }
+};
+
+
+
+export const verifyOtp = async (req, res) => {
+  const { mobile, otp } = req.body;
+
+  // 1️⃣ Find OTP record
+  const record = await Otp.findOne({ mobile });
+
+  if (!record) {
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  // 2️⃣ Block after 3 wrong attempts
+  if (record.attempts >= 3) {
+    return res.status(429).json({
+      message: "Too many attempts. Please request a new OTP.",
+    });
+  }
+
+  // 3️⃣ Check OTP value
+  if (record.otp !== otp) {
+    record.attempts += 1;
+    await record.save();
+
+    return res.status(400).json({ message: "Incorrect OTP" });
+  }
+
+  // 4️⃣ Prevent reuse
+  if (record.verified) {
+    return res.status(400).json({ message: "OTP already used" });
+  }
+
+  // 5️⃣ Expiry check
+  if (record.expiresAt < Date.now()) {
+    return res.status(400).json({ message: "OTP expired" });
+  }
+
+  // 6️⃣ Mark verified
+  record.verified = true;
+  await record.save();
+
+  res.json({ message: "OTP verified successfully" });
+};
+
+
+
+export const resetPassword = async (req, res) => {
+  const { mobile, newPassword } = req.body;
+
+  const otpRecord = await Otp.findOne({ mobile, verified: true });
+  if (!otpRecord) {
+    return res.status(400).json({ message: "OTP not verified" });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await User.findOneAndUpdate(
+    { mobile },
+    { password: hashedPassword }
+  );
+
+  // 🔒 Cleanup OTPs
+  await Otp.deleteMany({ mobile });
+
+  res.json({ message: "Password reset successful" });
+};
+
+
+
 

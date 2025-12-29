@@ -11,6 +11,9 @@ import {
     deleteAddress,
     deleteUser,
     changePassword,
+    sendOtp,
+    verifyOtp,
+    resetPassword,
  } from "../controllers/userController.js";
 import express from "express";
 import { authMiddleware } from "../middleware/auth.js";
@@ -26,6 +29,9 @@ router.put("/update-role",authMiddleware,checkAdmin,updateUserRole);
 router.delete("/delete-user/:id",authMiddleware,checkAdmin,deleteUser);
 router.put("/change-password", authMiddleware, changePassword);
 
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
+router.post("/reset-password", resetPassword);
 
 router.put("/update-profile", authMiddleware, uploadAvatar.single("avatar"), updateProfile);
 router.get("/me", authMiddleware, getMyProfile);
