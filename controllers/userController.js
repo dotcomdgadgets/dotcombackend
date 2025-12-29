@@ -374,7 +374,7 @@ export const sendOtp = async (req, res) => {
 
     res.json({ message: "OTP sent on WhatsApp" });
   } catch (error) {
-    console.error(error);
+    console.error("GUPSHUP ERROR:", error.response?.data || error.message);
     res.status(500).json({ message: "OTP send failed" });
   }
 };
@@ -425,6 +425,8 @@ export const verifyOtp = async (req, res) => {
 
 
 
+
+
 export const resetPassword = async (req, res) => {
   const { mobile, newPassword } = req.body;
 
@@ -445,6 +447,9 @@ export const resetPassword = async (req, res) => {
 
   res.json({ message: "Password reset successful" });
 };
+
+
+
 
 
 
