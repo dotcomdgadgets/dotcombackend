@@ -155,8 +155,8 @@ export const adminUpdateOrderStatus = async (req, res) => {
 export const getAllOrdersAdmin = async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("user", "name email mobile")
-      .populate("items.product")
+      .populate("user", "name mobile")
+      .populate("items.product", "name")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ orders });
