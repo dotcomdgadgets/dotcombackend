@@ -3,7 +3,8 @@ import {
   createOrder,
   getMyOrders,
   getOrderDetails,
-  adminUpdateOrderStatus
+  adminUpdateOrderStatus,
+  getAllOrdersAdmin,
 } from "../controllers/orderController.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { checkAdmin } from "../middleware/checkAdmin.js";
@@ -30,6 +31,7 @@ router.get("/details/:id", authMiddleware, getOrderDetails);
 
 // Admin update order status
 router.put("/update-status/:id", authMiddleware, checkAdmin, adminUpdateOrderStatus);
+router.get("/admin/all", authMiddleware, checkAdmin, getAllOrdersAdmin);
 
 export default router;
 

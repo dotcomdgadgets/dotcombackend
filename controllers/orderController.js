@@ -147,3 +147,22 @@ export const adminUpdateOrderStatus = async (req, res) => {
     res.status(500).json({ message: "Server error updating order" });
   }
 };
+
+
+/* ===================================================
+   ⭐ ADMIN: GET ALL ORDERS
+=================================================== */
+export const getAllOrdersAdmin = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "name email mobile")
+      .populate("items.product")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ orders });
+  } catch (error) {
+    console.error("Admin get orders error:", error);
+    res.status(500).json({ message: "Server error fetching all orders" });
+  }
+};
+
