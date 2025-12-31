@@ -167,17 +167,16 @@ export const getAllOrdersAdmin = async (req, res) => {
 };
 
 
+
 export const downloadInvoice = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate("user", "name mobile")
       .populate("items.product", "name");
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // ✅ HEADERS FIRST
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -185,22 +184,19 @@ export const downloadInvoice = async (req, res) => {
     );
 
     const doc = new PDFDocument({ size: "A4", margin: 40 });
-
-    // ✅ PIPE AFTER HEADERS
     doc.pipe(res);
 
     /* ================= HEADER ================= */
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(18)
-      .text("TAX INVOICE", { align: "center" });
+    doc.font("Helvetica-Bold").fontSize(18).text("TAX INVOICE", {
+      align: "center",
+    });
 
     doc.moveDown();
 
     doc.fontSize(10).font("Helvetica");
-    doc.text("Sold By: DOTCOM GADGETS PRIVATE LIMITED");
+    doc.text("Sold By: DOTCOM GADGETS");
     doc.text("GSTIN: 29ABCDE1234F1Z5");
-    doc.text("Bengaluru, Karnataka - 560103");
+    doc.text("Bengaluru, Karnataka");
 
     doc.moveDown();
 
@@ -210,13 +206,11 @@ export const downloadInvoice = async (req, res) => {
 
     doc.moveDown(1.5);
 
-    /* ================= BILLING ================= */
+    /* ================= ADDRESS ================= */
     doc.font("Helvetica-Bold").text("Billing Address");
     doc.font("Helvetica");
     doc.text(order.address.fullName);
-    doc.text(
-      `${order.address.houseNo}, ${order.address.area}`
-    );
+    doc.text(`${order.address.houseNo}, ${order.address.area}`);
     doc.text(
       `${order.address.city}, ${order.address.state} - ${order.address.pincode}`
     );
@@ -224,33 +218,40 @@ export const downloadInvoice = async (req, res) => {
 
     doc.moveDown();
 
-    /* ================= TABLE ================= */
+    /* ================= TABLE HEADER ================= */
     doc.font("Helvetica-Bold");
     doc.text("Product", 40, doc.y);
     doc.text("Qty", 300, doc.y);
-    doc.text("Price", 350, doc.y);
+    doc.text("Price", 360, doc.y);
     doc.text("Total", 430, doc.y);
 
     doc.moveDown(0.5);
     doc.moveTo(40, doc.y).lineTo(550, doc.y).stroke();
 
-    doc.font("Helvetica");
     let y = doc.y + 8;
+    doc.font("Helvetica");
 
     order.items.forEach((item) => {
-      const total = item.quantity * item.priceAtThatTime;
+      const name = item.product?.name || "Product removed";
+      const qty = item.quantity || 0;
+      const price = item.priceAtThatTime || 0;
+      const total = qty * price;
 
-      doc.text(item.product?.name || "Product removed", 40, y, { width: 240 });
-      doc.text(item.quantity.toString(), 300, y);
-      doc.text(`₹${item.priceAtThatTime}`, 350, y);
+      doc.text(name, 40, y, { width: 240 });
+      doc.text(String(qty), 300, y);
+      doc.text(`₹${price}`, 360, y);
       doc.text(`₹${total}`, 430, y);
 
       y += 25;
+
+      // NEW PAGE SAFETY
+      if (y > 750) {
+        doc.addPage();
+        y = 50;
+      }
     });
 
-    doc.moveTo(40, y).lineTo(550, y).stroke();
-
-    doc.moveDown();
+    doc.moveDown(2);
 
     /* ================= TOTAL ================= */
     doc.font("Helvetica-Bold");
@@ -259,25 +260,22 @@ export const downloadInvoice = async (req, res) => {
     });
 
     doc.moveDown(2);
-
     doc.fontSize(9).font("Helvetica");
     doc.text(
       "This is a system generated invoice. No signature required.",
       { align: "center" }
     );
 
-    // ✅ VERY IMPORTANT
     doc.end();
 
   } catch (error) {
-    console.error("Invoice error:", error);
-
-    // ⚠️ NEVER send JSON after piping PDF
+    console.error("🔥 Invoice error:", error);
     if (!res.headersSent) {
-      res.status(500).json({ message: "Invoice generation failed" });
+      res.status(500).json({ message: "Failed to generate invoice" });
     }
   }
 };
+
 
 
 
