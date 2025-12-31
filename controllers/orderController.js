@@ -170,6 +170,8 @@ export const getAllOrdersAdmin = async (req, res) => {
 
 
 
+
+
 export const downloadInvoice = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -180,14 +182,16 @@ export const downloadInvoice = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    const doc = new PDFDocument({ size: "A4", margin: 40 });
-
+    // ✅ HEADERS FIRST (VERY IMPORTANT)
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=invoice-${order._id}.pdf`
     );
     res.setHeader("Content-Type", "application/pdf");
 
+    const doc = new PDFDocument({ size: "A4", margin: 40 });
+
+    // ✅ PIPE AFTER HEADERS
     doc.pipe(res);
 
     /* ================= HEADER ================= */
@@ -213,17 +217,16 @@ export const downloadInvoice = async (req, res) => {
     doc.fontSize(12).text("Billing Address", { underline: true });
     doc.fontSize(10)
       .text(order.address.fullName)
-      .text(order.address.houseNo + ", " + order.address.area)
-      .text(
-        `${order.address.city}, ${order.address.state} - ${order.address.pincode}`
-      )
+      .text(`${order.address.houseNo}, ${order.address.area}`)
+      .text(`${order.address.city}, ${order.address.state} - ${order.address.pincode}`)
       .text(`Phone: ${order.address.phone}`);
 
     doc.moveDown(1.5);
 
     /* ================= TABLE HEADER ================= */
     const tableTop = doc.y;
-    doc.fontSize(10).text("Description", 40, tableTop);
+    doc.fontSize(10);
+    doc.text("Description", 40, tableTop);
     doc.text("Qty", 260, tableTop);
     doc.text("Price ₹", 300, tableTop);
     doc.text("Tax ₹", 360, tableTop);
@@ -233,30 +236,30 @@ export const downloadInvoice = async (req, res) => {
        .lineTo(550, tableTop + 15)
        .stroke();
 
-    let yPosition = tableTop + 25;
+    let y = tableTop + 25;
 
     /* ================= TABLE ROWS ================= */
     order.items.forEach((item) => {
       const price = item.priceAtThatTime * item.quantity;
       const tax = (price * 0.18).toFixed(2);
-      const total = (price + parseFloat(tax)).toFixed(2);
+      const total = (price + Number(tax)).toFixed(2);
 
-      doc.text(item.product?.name || "Product", 40, yPosition, { width: 200 });
-      doc.text(item.quantity, 260, yPosition);
-      doc.text(price.toFixed(2), 300, yPosition);
-      doc.text(tax, 360, yPosition);
-      doc.text(total, 430, yPosition);
+      doc.text(item.product?.name || "Product", 40, y, { width: 200 });
+      doc.text(item.quantity, 260, y);
+      doc.text(price.toFixed(2), 300, y);
+      doc.text(tax, 360, y);
+      doc.text(total, 430, y);
 
-      yPosition += 20;
+      y += 20;
     });
 
     doc.moveDown(2);
 
     /* ================= GRAND TOTAL ================= */
-    doc.fontSize(12)
-      .text(`Grand Total: ₹${order.totalAmount}`, {
-        align: "right",
-      });
+    doc.fontSize(12).text(
+      `Grand Total: ₹${order.totalAmount}`,
+      { align: "right" }
+    );
 
     doc.moveDown(3);
 
@@ -266,12 +269,15 @@ export const downloadInvoice = async (req, res) => {
       .moveDown()
       .text("Authorized Signatory", { align: "right" });
 
+    // ✅ MUST END DOCUMENT
     doc.end();
+
   } catch (error) {
     console.error("Invoice error:", error);
-    res.status(500).json({ message: "Failed to generate invoice" });
+    return res.status(500).json({ message: "Failed to generate invoice" });
   }
 };
+
 
 
 
