@@ -235,69 +235,65 @@ export const downloadInvoice = async (req, res) => {
     doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveDown(1);
 
-    /* ================= ITEMS ================= */
-    doc.font("Helvetica-Bold").fontSize(14).text("Order Items");
-    doc.moveDown(0.8);
+   /* ================= ITEMS ================= */
+doc.font("Helvetica-Bold").fontSize(14).text("Order Items");
+doc.moveDown(0.8);
 
-    // Table header
-    doc.fontSize(11).font("Helvetica-Bold");
-    doc.text("Item", 50, doc.y);
-    doc.text("Qty", 350, doc.y);
-    doc.text("Price", 420, doc.y);
-    doc.text("Total", 480, doc.y);
+// Table Header
+const tableTop = doc.y;
 
-    doc.moveDown(0.5);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-    doc.moveDown(0.5);
+doc.fontSize(11).font("Helvetica-Bold");
+doc.text("Item", 50, tableTop);
+doc.text("Qty", 360, tableTop, { width: 50, align: "center" });
+doc.text("Price", 420, tableTop, { width: 60, align: "right" });
+doc.text("Total", 500, tableTop, { width: 60, align: "right" });
 
-    doc.font("Helvetica").fontSize(11);
+doc.moveDown(0.5);
+doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
 
-    order.items.forEach((item, index) => {
-      const itemTotal = item.quantity * item.priceAtThatTime;
+doc.font("Helvetica").fontSize(11);
+doc.moveDown(0.5);
 
-      doc.text(
-        `${index + 1}. ${item.product?.name || "Product removed"}`,
-        50,
-        doc.y,
-        { width: 280 }
-      );
+order.items.forEach((item, index) => {
+  const y = doc.y; // 🔥 SAME Y FOR ENTIRE ROW
+  const itemTotal = item.quantity * item.priceAtThatTime;
 
-      doc.text(item.quantity.toString(), 350, doc.y);
-      doc.text(`₹${item.priceAtThatTime}`, 420, doc.y);
-      doc.text(`₹${itemTotal}`, 480, doc.y);
+  doc.text(
+    `${index + 1}. ${item.product?.name || "Product removed"}`,
+    50,
+    y,
+    { width: 280 }
+  );
 
-      doc.moveDown(0.8);
-    });
+  doc.text(item.quantity.toString(), 360, y, {
+    width: 50,
+    align: "center",
+  });
 
-    doc.moveDown(0.5);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-    doc.moveDown(1);
+  doc.text(`₹${item.priceAtThatTime}`, 420, y, {
+    width: 60,
+    align: "right",
+  });
 
-    /* ================= TOTAL ================= */
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(13)
-      .text(`Grand Total: ₹${order.totalAmount}`, {
-        align: "right",
-      });
+  doc.text(`₹${itemTotal}`, 500, y, {
+    width: 60,
+    align: "right",
+  });
 
-    doc.moveDown(2);
+  doc.moveDown(1); // move AFTER row is done
+});
 
-    /* ================= FOOTER ================= */
-    doc
-      .fontSize(10)
-      .font("Helvetica")
-      .fillColor("gray")
-      .text(
-        "This is a system generated invoice. No signature required.",
-        { align: "center" }
-      );
+doc.moveDown(0.5);
+doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+doc.moveDown(1);
 
-    doc.moveDown(0.5);
-    doc.text(
-      "Thank you for shopping with Dotcom Gadgets!",
-      { align: "center" }
-    );
+/* ================= TOTAL ================= */
+doc
+  .font("Helvetica-Bold")
+  .fontSize(13)
+  .text(`Grand Total: ₹${order.totalAmount}`, {
+    align: "right",
+  });
 
     doc.end();
   } catch (error) {
