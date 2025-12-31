@@ -334,7 +334,7 @@ export const changePassword = async (req, res) => {
 export const sendOtp = async (req, res) => {
   try {
     console.log("GUPSHUP KEY:", process.env.GUPSHUP_API_KEY);
-console.log("GUPSHUP SOURCE:", process.env.GUPSHUP_SOURCE);
+    console.log("GUPSHUP SOURCE:", process.env.GUPSHUP_SOURCE);
 
     const { mobile } = req.body;
 
@@ -382,6 +382,7 @@ console.log("GUPSHUP SOURCE:", process.env.GUPSHUP_SOURCE);
     res.status(500).json({ message: "OTP send failed" });
   }
 };
+
 
 
 

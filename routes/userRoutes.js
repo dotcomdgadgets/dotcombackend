@@ -22,6 +22,11 @@ import { uploadAvatar } from "../middleware/uploadAvatar.js";
 
 const router=express.Router();
 
+router.use((req, res, next) => {
+  console.log("USER ROUTE HIT:", req.method, req.originalUrl);
+  next();
+});
+
 router.post("/signup",signup);
 router.post("/login",login);
 router.get("/allUser",authMiddleware,checkAdmin,allUser);
