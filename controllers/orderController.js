@@ -170,8 +170,6 @@ export const getAllOrdersAdmin = async (req, res) => {
 
 
 
-
-
 export const downloadInvoice = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -182,103 +180,64 @@ export const downloadInvoice = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // ✅ HEADERS FIRST (VERY IMPORTANT)
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=invoice-${order._id}.pdf`
     );
     res.setHeader("Content-Type", "application/pdf");
 
-    const doc = new PDFDocument({ size: "A4", margin: 40 });
-
-    // ✅ PIPE AFTER HEADERS
     doc.pipe(res);
 
-    /* ================= HEADER ================= */
-    doc.fontSize(18).text("TAX INVOICE", { align: "center" });
-    doc.moveDown(0.5);
-
-    doc.fontSize(10)
-      .text("Sold By: Dotcom Gadgets Private Limited")
-      .text("GSTIN: 29ABCDE1234F1Z5")
-      .text("Bengaluru, Karnataka, India");
-
+    // ================= HEADER =================
+    doc.fontSize(20).text("DOTCOM GADGETS", { align: "center" });
+    doc.moveDown();
+    doc.fontSize(12).text(`Invoice ID: ${order._id}`);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`);
     doc.moveDown();
 
-    doc.fontSize(10)
-      .text(`Invoice Number: DCG-${order._id.slice(-8)}`)
-      .text(`Order ID: ${order._id}`)
-      .text(`Invoice Date: ${new Date().toLocaleDateString()}`)
-      .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+    // ================= CUSTOMER =================
+    doc.fontSize(14).text("Billing Details");
+    doc.fontSize(12).text(`Name: ${order.address.fullName}`);
+    doc.text(`Phone: ${order.address.phone}`);
+    doc.text(
+      `Address: ${order.address.houseNo}, ${order.address.area}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`
+    );
+    doc.moveDown();
 
-    doc.moveDown(1.5);
+    // ================= ITEMS =================
+    doc.fontSize(14).text("Order Items");
+    doc.moveDown(0.5);
 
-    /* ================= BILLING ADDRESS ================= */
-    doc.fontSize(12).text("Billing Address", { underline: true });
-    doc.fontSize(10)
-      .text(order.address.fullName)
-      .text(`${order.address.houseNo}, ${order.address.area}`)
-      .text(`${order.address.city}, ${order.address.state} - ${order.address.pincode}`)
-      .text(`Phone: ${order.address.phone}`);
+    order.items.forEach((item, index) => {
+      doc
+        .fontSize(12)
+        .text(
+          `${index + 1}. ${item.product?.name || "Product removed"}`
+        );
+      doc.text(`   Qty: ${item.quantity}`);
+      doc.text(`   Price: ₹${item.priceAtThatTime}`);
+      doc.moveDown(0.5);
+    });
 
-    doc.moveDown(1.5);
-
-    /* ================= TABLE HEADER ================= */
-    const tableTop = doc.y;
-    doc.fontSize(10);
-    doc.text("Description", 40, tableTop);
-    doc.text("Qty", 260, tableTop);
-    doc.text("Price ₹", 300, tableTop);
-    doc.text("Tax ₹", 360, tableTop);
-    doc.text("Total ₹", 430, tableTop);
-
-    doc.moveTo(40, tableTop + 15)
-       .lineTo(550, tableTop + 15)
-       .stroke();
-
-    let y = tableTop + 25;
-
-    /* ================= TABLE ROWS ================= */
-    order.items.forEach((item) => {
-      const price = item.priceAtThatTime * item.quantity;
-      const tax = (price * 0.18).toFixed(2);
-      const total = (price + Number(tax)).toFixed(2);
-
-      doc.text(item.product?.name || "Product", 40, y, { width: 200 });
-      doc.text(item.quantity, 260, y);
-      doc.text(price.toFixed(2), 300, y);
-      doc.text(tax, 360, y);
-      doc.text(total, 430, y);
-
-      y += 20;
+    // ================= TOTAL =================
+    doc.moveDown();
+    doc.fontSize(14).text(`Total Amount: ₹${order.totalAmount}`, {
+      align: "right",
     });
 
     doc.moveDown(2);
+    doc.fontSize(10).text("Thank you for shopping with Dotcom Gadgets!", {
+      align: "center",
+    });
 
-    /* ================= GRAND TOTAL ================= */
-    doc.fontSize(12).text(
-      `Grand Total: ₹${order.totalAmount}`,
-      { align: "right" }
-    );
-
-    doc.moveDown(3);
-
-    /* ================= SIGNATURE ================= */
-    doc.fontSize(10)
-      .text("For Dotcom Gadgets Private Limited", { align: "right" })
-      .moveDown()
-      .text("Authorized Signatory", { align: "right" });
-
-    // ✅ MUST END DOCUMENT
     doc.end();
-
   } catch (error) {
     console.error("Invoice error:", error);
-    return res.status(500).json({ message: "Failed to generate invoice" });
+    res.status(500).json({ message: "Failed to generate invoice" });
   }
 };
-
-
 
 
 
