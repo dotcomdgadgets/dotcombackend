@@ -42,3 +42,4 @@ router.put("/address/:id", authMiddleware, updateAddress);
 router.delete("/address/:id", authMiddleware, deleteAddress);
 
 export default router;
+
