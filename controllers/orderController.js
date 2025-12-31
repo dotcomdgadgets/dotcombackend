@@ -166,3 +166,80 @@ export const getAllOrdersAdmin = async (req, res) => {
   }
 };
 
+import PDFDocument from "pdfkit";
+import Order from "../models/orderModel.js";
+
+export const downloadInvoice = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("user", "name mobile")
+      .populate("items.product", "name");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoice-${order._id}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+
+    doc.pipe(res);
+
+    // ================= HEADER =================
+    doc.fontSize(20).text("DOTCOM GADGETS", { align: "center" });
+    doc.moveDown();
+    doc.fontSize(12).text(`Invoice ID: ${order._id}`);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+    doc.moveDown();
+
+    // ================= CUSTOMER =================
+    doc.fontSize(14).text("Billing Details");
+    doc.fontSize(12).text(`Name: ${order.address.fullName}`);
+    doc.text(`Phone: ${order.address.phone}`);
+    doc.text(
+      `Address: ${order.address.houseNo}, ${order.address.area}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`
+    );
+    doc.moveDown();
+
+    // ================= ITEMS =================
+    doc.fontSize(14).text("Order Items");
+    doc.moveDown(0.5);
+
+    order.items.forEach((item, index) => {
+      doc
+        .fontSize(12)
+        .text(
+          `${index + 1}. ${item.product?.name || "Product removed"}`
+        );
+      doc.text(`   Qty: ${item.quantity}`);
+      doc.text(`   Price: ₹${item.priceAtThatTime}`);
+      doc.moveDown(0.5);
+    });
+
+    // ================= TOTAL =================
+    doc.moveDown();
+    doc.fontSize(14).text(`Total Amount: ₹${order.totalAmount}`, {
+      align: "right",
+    });
+
+    doc.moveDown(2);
+    doc.fontSize(10).text("Thank you for shopping with Dotcom Gadgets!", {
+      align: "center",
+    });
+
+    doc.end();
+  } catch (error) {
+    console.error("Invoice error:", error);
+    res.status(500).json({ message: "Failed to generate invoice" });
+  }
+};
+
+
+
+
+
+
