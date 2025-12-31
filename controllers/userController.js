@@ -332,56 +332,10 @@ export const changePassword = async (req, res) => {
 
 // WhatsApp OTP via Gupshup
 export const sendOtp = async (req, res) => {
-  try {
-    console.log("GUPSHUP KEY:", process.env.GUPSHUP_API_KEY);
-    console.log("GUPSHUP SOURCE:", process.env.GUPSHUP_SOURCE);
-
-    const { mobile } = req.body;
-
-    const user = await User.findOne({ mobile });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    await Otp.deleteMany({ mobile });
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    await Otp.create({
-      mobile,
-      otp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      verified: false,
-      attempts: 0,
-    });
-
-    const formattedMobile = `91${mobile}`;
-
-    await axios.post(
-      "https://api.gupshup.io/wa/api/v1/msg",
-      new URLSearchParams({
-        channel: "whatsapp",
-        source: process.env.GUPSHUP_SOURCE,
-        destination: formattedMobile,
-        message: JSON.stringify({
-          type: "text",
-          text: `Your OTP for password reset is ${otp}. Valid for 5 minutes.`,
-        }),
-      }),
-      {
-        headers: {
-          apikey: process.env.GUPSHUP_API_KEY,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-
-    res.json({ message: "OTP sent on WhatsApp" });
-  } catch (error) {
-    console.error("OTP ERROR:", error.response?.data || error.message);
-    res.status(500).json({ message: "OTP send failed" });
-  }
+  console.log("OTP TEST MODE");
+  return res.json({ message: "OTP test success" });
 };
+
 
 
 

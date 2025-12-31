@@ -39,6 +39,11 @@ connectDB();
 app.get("/", (req, res) => {
   res.send("Dotcom backend is live 🚀");
 });
+console.log("🚀 SERVER START");
+console.log("ENV CHECK:", {
+  GUPSHUP_API_KEY: process.env.GUPSHUP_API_KEY ? "FOUND" : "MISSING",
+  GUPSHUP_SOURCE: process.env.GUPSHUP_SOURCE ? "FOUND" : "MISSING",
+});
 
 app.use("/api/location", locationRoutes);
 app.use("/api/paywithreward", payWithRewardRoutes);
