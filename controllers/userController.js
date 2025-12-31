@@ -332,7 +332,10 @@ export const changePassword = async (req, res) => {
 
 // WhatsApp OTP via Gupshup
 export const sendOtp = async (req, res) => {
-  console.log("OTP TEST MODE");
+  console.log("SEND OTP HIT");
+
+  console.log("KEY:", process.env.GUPSHUP_API_KEY);
+  console.log("SOURCE:", process.env.GUPSHUP_SOURCE);
   return res.json({ message: "OTP test success" });
 };
 
