@@ -287,14 +287,41 @@ doc.moveDown(0.5);
 doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
 doc.moveDown(1);
 
-/* ================= TOTAL ================= */
+/* ================= GRAND TOTAL BOX ================= */
+
+doc.moveDown(1.5);
+
+// separator line
+doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+doc.moveDown(0.8);
+
+const boxTop = doc.y;
+const boxHeight = 40;
+
+// Draw background box
 doc
+  .rect(350, boxTop, 195, boxHeight)
+  .fill("#f5f5f5")
+  .stroke("#000");
+
+// Label
+doc
+  .fillColor("#333")
   .font("Helvetica-Bold")
-  .fontSize(13)
-  .text(`Grand Total: ₹${order.totalAmount}`, {
+  .fontSize(12)
+  .text("Grand Total", 360, boxTop + 12);
+
+// Amount
+doc
+  .fontSize(14)
+  .text(`₹ ${order.totalAmount}`, 360, boxTop + 10, {
+    width: 170,
     align: "right",
   });
 
+// reset color
+doc.fillColor("#000");
+doc.moveDown(3);
     doc.end();
   } catch (error) {
     console.error("Invoice error:", error);
