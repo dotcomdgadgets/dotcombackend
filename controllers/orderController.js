@@ -169,6 +169,8 @@ export const getAllOrdersAdmin = async (req, res) => {
 
 
 export const downloadInvoice = async (req, res) => {
+  console.log("🔥 INVOICE API HIT", req.params.id);
+
   try {
     const order = await Order.findById(req.params.id)
       .populate("items.product", "name");
