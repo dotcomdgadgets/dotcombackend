@@ -270,12 +270,12 @@ order.items.forEach((item, index) => {
     align: "center",
   });
 
-  doc.text(`₹${item.priceAtThatTime}`, 420, y, {
+  doc.text(`Rs. ${item.priceAtThatTime}`, 420, y, {
     width: 60,
     align: "right",
   });
 
-  doc.text(`₹${itemTotal}`, 500, y, {
+  doc.text(`Rs. ${itemTotal}`, 500, y, {
     width: 60,
     align: "right",
   });
@@ -314,7 +314,7 @@ doc
 // Amount
 doc
   .fontSize(14)
-  .text(`₹ ${order.totalAmount}`, 360, boxTop + 10, {
+  .text(`Rs. ${order.totalAmount}`, 360, boxTop + 10, {
     width: 170,
     align: "right",
   });
