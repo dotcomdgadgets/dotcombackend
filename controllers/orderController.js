@@ -1,5 +1,6 @@
 import Order from "../models/orderModel.js";
 import User from "../models/userModel.js";
+import PDFDocument from "pdfkit";
 
 /* ===================================================
    ⭐ CREATE ORDER
@@ -166,8 +167,8 @@ export const getAllOrdersAdmin = async (req, res) => {
   }
 };
 
-import PDFDocument from "pdfkit";
-import Order from "../models/orderModel.js";
+
+
 
 export const downloadInvoice = async (req, res) => {
   try {
