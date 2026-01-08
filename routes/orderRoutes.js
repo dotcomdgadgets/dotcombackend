@@ -6,6 +6,7 @@ import {
   adminUpdateOrderStatus,
   getAllOrdersAdmin,
   downloadInvoice,
+  getCheckoutSummary
 } from "../controllers/orderController.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { checkAdmin } from "../middleware/checkAdmin.js";
@@ -15,7 +16,7 @@ const router = express.Router();
 // ==============================
 // ⭐ USER ROUTES
 // ==============================
-
+router.get("/checkout-summary", authMiddleware, getCheckoutSummary);
 // Create new order
 router.post("/create", authMiddleware, createOrder);
 

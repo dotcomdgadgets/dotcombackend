@@ -76,17 +76,41 @@ const orderSchema = new mongoose.Schema(
       default: "Pending",
     },
 
+    // 💰 PRICE BREAKUP (IMPORTANT)
+    subTotal: {
+      type: Number,
+      required: true,
+    },
+
+    gstAmount: {
+      type: Number,
+      required: true,
+    },
+
+    deliveryCharge: {
+      type: Number,
+      required: true,
+    },
+
+    grandTotal: {
+      type: Number,
+      required: true,
+    },
+
+    // 🔁 backward compatibility (optional)
     totalAmount: {
       type: Number,
       required: true,
     },
 
-    razorpayPaymentId: { type: String }, // For online payment support
-    razorpayOrderId: { type: String },
-    razorpaySignature: { type: String },
+    // 💳 Razorpay
+    razorpayPaymentId: String,
+    razorpayOrderId: String,
+    razorpaySignature: String,
   },
   { timestamps: true }
 );
+
 
 // Fix model overwrite error in development
 mongoose.models = {};

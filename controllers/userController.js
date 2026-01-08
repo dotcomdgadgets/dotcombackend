@@ -331,14 +331,60 @@ export const changePassword = async (req, res) => {
 };
 
 // WhatsApp OTP via Gupshup
+// WhatsApp OTP via Gupshup
 export const sendOtp = async (req, res) => {
-  console.log("SEND OTP HIT");
+  try {
+    const { mobile } = req.body;
 
-  console.log("KEY:", process.env.GUPSHUP_API_KEY);
-  console.log("SOURCE:", process.env.GUPSHUP_SOURCE);
-  return res.json({ message: "OTP test success" });
+    const user = await User.findOne({ mobile });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await Otp.deleteMany({ mobile });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Otp.create({
+      mobile,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      verified: false,
+      attempts: 0,
+    });
+
+    const formattedMobile = `91${mobile}`;
+
+    await axios.post(
+      "https://api.gupshup.io/wa/api/v1/template/msg",
+      new URLSearchParams({
+        channel: "whatsapp",
+        source: process.env.GUPSHUP_SOURCE,      // 919811048392
+        destination: formattedMobile,
+        template: JSON.stringify({
+          id: "otp_login",                       // TEMPLATE NAME
+          params: [
+            "thePDFzone",
+            otp,
+            "5"
+          ]
+        })
+      }),
+      {
+        headers: {
+          apikey: process.env.GUPSHUP_API_KEY,
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      }
+    );
+
+    res.json({ message: "OTP sent on WhatsApp" });
+
+  } catch (error) {
+    console.error("OTP ERROR:", error.response?.data || error.message);
+    res.status(500).json({ message: "OTP send failed" });
+  }
 };
-
 
 
 
