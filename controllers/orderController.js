@@ -314,7 +314,7 @@ export const downloadInvoice = async (req, res) => {
       });
 
       doc.text(
-        `₹${Number(item.priceAtThatTime || 0).toFixed(2)}`,
+        `Rs ${Number(item.priceAtThatTime || 0).toFixed(2)}`,
         490,
         y,
         { width: 60, align: "right" }
@@ -351,7 +351,7 @@ export const downloadInvoice = async (req, res) => {
         width: summaryWidth - 90,
       });
 
-      doc.text(`₹${safeValue.toFixed(2)}`, summaryX, summaryY, {
+      doc.text(`Rs ${safeValue.toFixed(2)}`, summaryX, summaryY, {
         width: summaryWidth,
         align: "right",
       });
