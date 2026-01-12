@@ -2,6 +2,7 @@ import Order from "../models/orderModel.js";
 import User from "../models/userModel.js";
 import PDFDocument from "pdfkit";
 import { calculateOrderPrice } from "../utils/calculateOrderPrice.js";
+import { generatePackingSlip } from "../utils/generatePackingSlip.js";
 
 /* ===================================================
    ⭐ CREATE ORDER
@@ -210,10 +211,6 @@ export const getCheckoutSummary = async (req, res) => {
 };
 
 
-
-
-
-
 export const downloadInvoice = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -223,16 +220,17 @@ export const downloadInvoice = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    /* ================= READ FROM DB ================= */
-    const subTotal = order.subTotal;
-    const gstAmount = order.gstAmount;
-    const deliveryCharge = order.deliveryCharge;
-    const promiseFee = order.promiseFee || 0;
-    const grandTotal = order.grandTotal;
+    /* ================= SAFE PRICE READ ================= */
+    const subTotal = Number(order.subTotal || 0);
+    const gstAmount = Number(order.gstAmount || 0);
+    const deliveryCharge = Number(order.deliveryCharge || 0);
+    const promiseFee = Number(order.promiseFee || 0);
+    const grandTotal = Number(order.grandTotal || 0);
 
-    const cgst = gstAmount / 2;
-    const sgst = gstAmount / 2;
+    const cgst = +(gstAmount / 2).toFixed(2);
+    const sgst = +(gstAmount / 2).toFixed(2);
 
+    /* ================= PDF INIT ================= */
     const doc = new PDFDocument({ size: "A4", margin: 50 });
 
     res.setHeader(
@@ -243,41 +241,26 @@ export const downloadInvoice = async (req, res) => {
 
     doc.pipe(res);
 
-   /* ================= HEADER ================= */
+    /* ================= HEADER ================= */
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(20)
+      .text("DOTCOM GADGETS", { align: "center" });
 
-// Company Name
-doc
-  .font("Helvetica-Bold")
-  .fontSize(20)
-  .fillColor("black")
-  .text("DOTCOM GADGETS", {
-    align: "center",
-  });
+    doc
+      .moveDown(0.2)
+      .fontSize(10)
+      .fillColor("gray")
+      .text("GST Invoice", { align: "center" });
 
-// Invoice type
-doc
-  .moveDown(0.2)
-  .fontSize(10)
-  .fillColor("gray")
-  .text("GST Invoice", {
-    align: "center",
-  });
+    doc
+      .moveDown(0.2)
+      .fontSize(9)
+      .text("GSTIN: 07AAKCD3151A1Z5 | Delhi", { align: "center" });
 
-// GSTIN + Location
-doc
-  .moveDown(0.2)
-  .fontSize(9)
-  .text("GSTIN: 07AAKCD3151A1Z5 | Delhi", {
-    align: "center",
-  });
-
-// Reset color
-doc.fillColor("black");
-
-// Divider line (full width, centered)
-doc.moveDown(0.6);
-doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-
+    doc.fillColor("black");
+    doc.moveDown(0.6);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
 
     /* ================= INVOICE META ================= */
     doc.moveDown(1);
@@ -301,51 +284,50 @@ doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
 
     /* ================= ITEMS TABLE ================= */
-doc.moveDown(1);
-doc.font("Helvetica-Bold").fontSize(13).text("Order Items");
-doc.moveDown(0.6);
+    doc.moveDown(1);
+    doc.font("Helvetica-Bold").fontSize(13).text("Order Items");
+    doc.moveDown(0.6);
 
-const tableTop = doc.y;
+    const tableTop = doc.y;
 
-// ---- Table Header ----
-doc.fontSize(11).font("Helvetica-Bold");
-doc.text("Item", 50, tableTop);
-doc.text("Qty", 350, tableTop, { width: 50, align: "center" });
-doc.text("Price", 490, tableTop, { width: 60, align: "right" });
+    doc.fontSize(11);
+    doc.text("Item", 50, tableTop);
+    doc.text("Qty", 350, tableTop, { width: 50, align: "center" });
+    doc.text("Price", 490, tableTop, { width: 60, align: "right" });
 
-doc.moveDown(0.4);
-doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.4);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
 
-// ---- Table Rows ----
-doc.font("Helvetica").fontSize(11);
-doc.moveDown(0.6);
+    doc.font("Helvetica").fontSize(11);
+    doc.moveDown(0.6);
 
-order.items.forEach((item, index) => {
-  const rowY = doc.y; // 🔒 LOCK Y POSITION
+    order.items.forEach((item, index) => {
+      const y = doc.y;
 
-  doc.text(`${index + 1}. ${item.product?.name}`, 50, rowY, {
-    width: 280,
-  });
+      doc.text(`${index + 1}. ${item.product?.name || "Product"}`, 50, y, {
+        width: 280,
+      });
 
-  doc.text(item.quantity.toString(), 350, rowY, {
-    width: 50,
-    align: "center",
-  });
+      doc.text(String(item.quantity || 0), 350, y, {
+        width: 50,
+        align: "center",
+      });
 
-  doc.text(`Rs. ${item.priceAtThatTime.toFixed(2)}`, 490, rowY, {
-    width: 60,
-    align: "right",
-  });
+      doc.text(
+        `₹${Number(item.priceAtThatTime || 0).toFixed(2)}`,
+        490,
+        y,
+        { width: 60, align: "right" }
+      );
 
-  doc.moveDown(1); // row height
-});
+      doc.moveDown(1);
+    });
 
-    /* ================= BILL SUMMARY (RIGHT BOX) ================= */
+    /* ================= BILL SUMMARY ================= */
     const summaryWidth = 500;
     const summaryX = 49;
     let summaryY = doc.y + 15;
 
-    // background box
     doc
       .roundedRect(summaryX - 10, summaryY - 10, summaryWidth + 20, 170, 6)
       .fill("#f5f5f5");
@@ -355,21 +337,21 @@ order.items.forEach((item, index) => {
     doc
       .font("Helvetica-Bold")
       .fontSize(13)
-      .text("Bill Summary", summaryX, summaryY, {
-        width: summaryWidth,
-      });
+      .text("Bill Summary", summaryX, summaryY);
 
     summaryY += 25;
     doc.font("Helvetica").fontSize(11);
 
     const row = (label, value, bold = false) => {
+      const safeValue = Number(value || 0);
+
       doc.font(bold ? "Helvetica-Bold" : "Helvetica");
 
       doc.text(label, summaryX, summaryY, {
         width: summaryWidth - 90,
       });
 
-      doc.text(`Rs. ${value.toFixed(2)}`, summaryX, summaryY, {
+      doc.text(`₹${safeValue.toFixed(2)}`, summaryX, summaryY, {
         width: summaryWidth,
         align: "right",
       });
@@ -408,12 +390,29 @@ order.items.forEach((item, index) => {
     doc.end();
   } catch (error) {
     console.error("Invoice error:", error);
-    res.status(500).json({ message: "Failed to generate invoice" });
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Failed to generate invoice" });
+    }
   }
 };
 
 
 
+export const downloadPackingSlip = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("items.product");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    generatePackingSlip(order, res);
+  } catch (error) {
+    console.error("Packing slip error:", error);
+    res.status(500).json({ message: "Failed to generate packing slip" });
+  }
+};
 
 
 

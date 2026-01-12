@@ -6,7 +6,8 @@ import {
   adminUpdateOrderStatus,
   getAllOrdersAdmin,
   downloadInvoice,
-  getCheckoutSummary
+  getCheckoutSummary,
+  downloadPackingSlip,
 } from "../controllers/orderController.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { checkAdmin } from "../middleware/checkAdmin.js";
@@ -27,11 +28,13 @@ router.get("/my-orders", authMiddleware, getMyOrders);
 router.get("/details/:id", authMiddleware, getOrderDetails);
 
 router.get("/invoice/:id", authMiddleware, downloadInvoice);
+
+router.get("/packing-slip/:id", authMiddleware, downloadPackingSlip);
+
 // ==============================
 // ⭐ ADMIN ROUTES
 // ==============================
 
-// Admin update order status
 router.put("/update-status/:id", authMiddleware, checkAdmin, adminUpdateOrderStatus);
 router.get("/admin/all", authMiddleware, checkAdmin, getAllOrdersAdmin);
 
