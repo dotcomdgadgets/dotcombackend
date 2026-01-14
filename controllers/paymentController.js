@@ -145,41 +145,10 @@ export const verifyPayment = async (req, res) => {
 
   res.status(500).json({ message: "Payment verification failed" });
 }
-
 };
 
 
-// export const getPaymentLogs = async (req, res) => {
-//   const { status } = req.query;
 
-//   const filter = status ? { status } : {};
-
-//   const logs = await PaymentLog.find(filter)
-//     .populate("user", "name email")
-//     .sort({ createdAt: -1 });
-
-//   res.json(logs);
-// };
-
-
-// export const logFailedPayment = async (req, res) => {
-//   try {
-//     const userId = req.user._id;
-//     const { razorpayOrderId, reason, amount } = req.body;
-
-//     await PaymentLog.create({
-//       user: userId,
-//       razorpayOrderId,
-//       amount,
-//       status: "FAILED",
-//       reason,
-//     });
-
-//     res.status(201).json({ message: "Failed payment logged" });
-//   } catch (err) {
-//     res.status(500).json({ message: "Failed to log payment" });
-//   }
-// };
 
 
 

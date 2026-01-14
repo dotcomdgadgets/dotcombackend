@@ -12,7 +12,7 @@ const payWithRewardSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      match: [/^[6-9]\d{9}$/, "Invalid mobile number"], // Indian mobile validation
+      match: [/^[6-9]\d{9}$/, "Invalid mobile number"],
     },
 
     amount: {
@@ -23,11 +23,29 @@ const payWithRewardSchema = new mongoose.Schema(
 
     rewardCoins: {
       type: Number,
-      default: 0,  // Calculated in frontend or backend
+      required: true,
+    },
+
+    // 🆕 REDEMPTION STATUS
+    status: {
+      type: String,
+      enum: ["Pending", "Redeemed"],
+      default: "Pending",
+    },
+
+    redeemedAt: {
+      type: Date,
+    },
+
+    redeemedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "userDetails", // admin
     },
   },
   { timestamps: true }
 );
 
-const payWithReward = mongoose.model("payWithReward", payWithRewardSchema);
-export default payWithReward;
+const PayWithReward = mongoose.model("payWithReward", payWithRewardSchema);
+export default PayWithReward;
+
+

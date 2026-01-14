@@ -69,3 +69,78 @@ export const getPaymentDetail = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+export const redeemReward = async (req, res) => {
+  try {
+    const { mobile, coins } = req.body;
+
+    console.log("Redeem request:", req.body);
+
+    if (!mobile || !coins) {
+      return res.status(400).json({
+        message: "Mobile and coins are required",
+      });
+    }
+
+    // 1️⃣ Find reward (handle old records)
+    const reward = await payWithReward.findOne({
+      mobile,
+      status: { $ne: "Redeemed" },
+    });
+
+    if (!reward) {
+      return res.status(404).json({
+        message: "No pending reward found",
+      });
+    }
+
+    // 2️⃣ Find user
+    const user = await User.findOne({ mobile });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // 3️⃣ Validate coins
+    const redeemCoins = Number(coins);
+
+    if (redeemCoins <= 0) {
+      return res.status(400).json({
+        message: "Invalid coin amount",
+      });
+    }
+
+    if (redeemCoins > reward.rewardCoins) {
+      return res.status(400).json({
+        message: "Redeem coins exceed available balance",
+      });
+    }
+
+    // 4️⃣ Deduct coins
+    user.rewardCoins = Math.max(0, user.rewardCoins - redeemCoins);
+    await user.save();
+
+    // 5️⃣ Update reward record
+    reward.status = "Redeemed";
+    reward.redeemedAt = new Date();
+    reward.redeemedBy = req.user?._id;
+    await reward.save();
+
+    res.status(200).json({
+      message: "Reward redeemed successfully",
+      reward,
+    });
+  } catch (error) {
+    console.error("🔥 Redeem reward error:", error);
+    res.status(500).json({
+      message: "Server error during redemption",
+      error: error.message,
+    });
+  }
+};
+
+
+
