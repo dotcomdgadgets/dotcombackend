@@ -60,11 +60,11 @@ export const getAllProducts = async (req, res) => {
     }
 
     // ✅ SEARCH FILTER (FIXED)
-    if (search && search.trim() !== "") {
-      query.name = {
-        $regex: search.trim(),
-        $options: "i", // case-insensitive
-      };
+      if (search && search.trim() !== "") {
+      query.$or = [
+        { name: { $regex: search.trim(), $options: "i" } },
+        { category: { $regex: search.trim(), $options: "i" } },
+      ];
     }
 
     const products = await Product.find(query).sort({ createdAt: -1 });
