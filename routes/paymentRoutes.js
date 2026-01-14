@@ -10,4 +10,8 @@ const router = express.Router();
 router.post("/create-order", authMiddleware, createRazorpayOrder);
 router.post("/verify", authMiddleware, verifyPayment);
 
+
 export default router;
+
+
+

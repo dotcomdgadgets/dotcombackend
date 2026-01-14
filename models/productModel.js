@@ -15,8 +15,8 @@ const productSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-
+/* ✅ ADD INDEX FOR FAST STOCK QUERIES */
+productSchema.index({ stock: 1 });
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;

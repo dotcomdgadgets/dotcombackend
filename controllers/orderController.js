@@ -3,13 +3,13 @@ import User from "../models/userModel.js";
 import PDFDocument from "pdfkit";
 import { calculateOrderPrice } from "../utils/calculateOrderPrice.js";
 import { generatePackingSlip } from "../utils/generatePackingSlip.js";
+import axios from "axios";
+import Product from "../models/productModel.js";
 
 /* ===================================================
    ⭐ CREATE ORDER
    Called when user clicks "Place Order"
 =================================================== */
-
-
 export const createOrder = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -51,15 +51,32 @@ export const createOrder = async (req, res) => {
       landmark: address.landmark || "",
     };
 
-    // 6️⃣ Create order
+      // 🔴 STOCK VALIDATION (prevent overselling)
+      for (const item of items) {
+        const product = await Product.findById(item.product);
+
+        if (!product) {
+          return res.status(404).json({
+            message: "Product not found",
+          });
+        }
+
+        if (product.stock < item.quantity) {
+          return res.status(400).json({
+            message: `${product.name} is out of stock`,
+          });
+        }
+      }
+
+    // Create order
     const order = await Order.create({
       user: userId,
       items,
       address: addressSnapshot,
       paymentMethod,
 
-      // 🔥 PRICE BREAKUP (CONSISTENT)
-      subTotal: price.subTotal,
+      //PRICE BREAKUP (CONSISTENT)
+      taxableValue: price.taxableValue,
       gstAmount: price.gstAmount,
       deliveryCharge: price.deliveryCharge,
       promiseFee: price.promiseFee,
@@ -70,6 +87,15 @@ export const createOrder = async (req, res) => {
       paymentStatus: paymentMethod === "COD" ? "Pending" : "Paid",
       orderStatus: "Pending",
     });
+    // 🔥 DECREASE PRODUCT STOCK
+      const bulkOps = items.map((item) => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { stock: -item.quantity } },
+        },
+      }));
+
+      await Product.bulkWrite(bulkOps);
 
     // 7️⃣ Clear cart
     user.cart = [];
@@ -219,9 +245,19 @@ export const downloadInvoice = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+    let logoBuffer = null;
+    try {
+      const logoRes = await axios.get(
+        process.env.COMPANY_LOGO_URL,
+        { responseType: "arraybuffer" }
+      );
+      logoBuffer = logoRes.data;
+    } catch (err) {
+      console.warn("⚠ Logo load failed, continuing without logo");
+    }
 
     /* ================= SAFE PRICE READ ================= */
-    const subTotal = Number(order.subTotal || 0);
+    const taxableValue = Number(order.taxableValue || 0);
     const gstAmount = Number(order.gstAmount || 0);
     const deliveryCharge = Number(order.deliveryCharge || 0);
     const promiseFee = Number(order.promiseFee || 0);
@@ -232,7 +268,6 @@ export const downloadInvoice = async (req, res) => {
 
     /* ================= PDF INIT ================= */
     const doc = new PDFDocument({ size: "A4", margin: 50 });
-
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=invoice-${order._id}.pdf`
@@ -242,46 +277,83 @@ export const downloadInvoice = async (req, res) => {
     doc.pipe(res);
 
     /* ================= HEADER ================= */
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(20)
-      .text("DOTCOM GADGETS", { align: "center" });
+const PAGE_WIDTH = 595;
+const MARGIN = 50;
+const LOGO_WIDTH = 80;
+const LOGO_X = PAGE_WIDTH - MARGIN - LOGO_WIDTH;
+// 🟢 LEFT SIDE – COMPANY DETAILS
+doc
+  .font("Helvetica-Bold")
+  .fontSize(18)
+  .text("DOTCOM GADGETS", 50, 45);
 
-    doc
-      .moveDown(0.2)
-      .fontSize(10)
-      .fillColor("gray")
-      .text("GST Invoice", { align: "center" });
+doc
+  .moveDown(0.3)
+  .font("Helvetica")
+  .fontSize(9)
+  .fillColor("gray-600")
+  .text(
+    "Registered Office:\n" +
+      "Dotcom Gadgets Pvt Ltd\n" +
+      "Rohtash Nagar Shahadra\n" +
+      "Delhi, 110032\n" +
+      "GSTIN: 07AAKCD3151A1Z5",
+    50,
+    70
+  );
 
-    doc
-      .moveDown(0.2)
-      .fontSize(9)
-      .text("GSTIN: 07AAKCD3151A1Z5 | Delhi", { align: "center" });
+doc.fillColor("black");
 
-    doc.fillColor("black");
-    doc.moveDown(0.6);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+//  LOGO
+// 🟢 RIGHT SIDE – LOGO
+if (logoBuffer) {
+  doc.image(logoBuffer, LOGO_X, 45, {
+    width: LOGO_WIDTH,
+  });
+}
 
-    /* ================= INVOICE META ================= */
+// Divider
+doc.moveDown(4);
+doc.moveTo(MARGIN, doc.y).lineTo(PAGE_WIDTH - MARGIN, doc.y).stroke();
+
+
+/* ================= INVOICE META ================= */
     doc.moveDown(1);
-    doc.fontSize(11);
-    doc.text(`Invoice ID: ${order._id}`);
-    doc.text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .text(`Invoice ID: ${order._id}`, 50);
+
+    doc
+      .text(
+        `Order Date: ${new Date(order.createdAt).toLocaleDateString()}`,
+        50
+      );
+
 
     /* ================= CUSTOMER ================= */
-    doc.moveDown(1);
-    doc.font("Helvetica-Bold").fontSize(13).text("Billing & Shipping Details");
-    doc.moveDown(0.4);
-    doc.font("Helvetica").fontSize(11);
+doc.moveDown(1);
 
-    doc.text(`Name: ${order.address.fullName}`);
-    doc.text(`Phone: ${order.address.phone}`);
-    doc.text(
-      `Address: ${order.address.houseNo}, ${order.address.area}, ${order.address.city}, ${order.address.state} - ${order.address.pincode}`
-    );
+doc
+  .font("Helvetica-Bold")
+  .fontSize(13)
+  .text("Billing & Shipping Details", 50);
 
-    doc.moveDown(0.8);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+doc.moveDown(0.4);
+
+doc
+  .font("Helvetica")
+  .fontSize(11)
+  .text(`Name: ${order.address.fullName}`, 50);
+
+doc.text(`Phone: ${order.address.phone}`, 50);
+
+doc.text(
+  `Address: ${order.address.houseNo}, ${order.address.area}, ` +
+  `${order.address.city}, ${order.address.state} - ${order.address.pincode}`,
+  50
+);
 
     /* ================= ITEMS TABLE ================= */
     doc.moveDown(1);
@@ -359,10 +431,10 @@ export const downloadInvoice = async (req, res) => {
       summaryY += 18;
     };
 
-    row("Subtotal", subTotal);
-    row("Delivery Charges", deliveryCharge);
+    row("Taxable Value", taxableValue);
     row("CGST (9%)", cgst);
     row("SGST (9%)", sgst);
+    row("Delivery Charges", deliveryCharge);
 
     if (promiseFee > 0) {
       row("Promise Fee", promiseFee);
@@ -406,19 +478,10 @@ export const downloadPackingSlip = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-
     generatePackingSlip(order, res);
   } catch (error) {
     console.error("Packing slip error:", error);
     res.status(500).json({ message: "Failed to generate packing slip" });
   }
 };
-
-
-
-
-
-
-
-
 

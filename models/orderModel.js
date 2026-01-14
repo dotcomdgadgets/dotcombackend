@@ -77,7 +77,7 @@ const orderSchema = new mongoose.Schema(
     },
 
     // 💰 PRICE BREAKUP (IMPORTANT)
-    subTotal: {
+    taxableValue: {
       type: Number,
       required: true,
     },
@@ -91,7 +91,10 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-
+    promiseFee: {
+      type: Number,
+      default: 0,
+    },
     grandTotal: {
       type: Number,
       required: true,

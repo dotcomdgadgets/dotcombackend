@@ -2,6 +2,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import Order from "../models/orderModel.js";
 import User from "../models/userModel.js";
+import PaymentLog from "../models/paymentLogModel.js";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -55,8 +56,19 @@ export const verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (expectedSignature !== razorpaySignature) {
-      return res.status(400).json({ message: "Invalid payment signature" });
-    }
+  await PaymentLog.create({
+    user: userId,
+    razorpayOrderId,
+    razorpayPaymentId,
+    status: "FAILED",
+    reason: "Invalid Razorpay signature",
+  });
+
+  return res.status(400).json({
+    message: "Invalid payment signature",
+  });
+}
+
 
     /* =====================
        2️⃣ FETCH USER
@@ -123,8 +135,53 @@ export const verifyPayment = async (req, res) => {
       order,
     });
   } catch (error) {
-    console.error("Verify payment error:", error);
-    res.status(500).json({ message: "Payment verification failed" });
-  }
+  console.error("Verify payment error:", error);
+
+  await PaymentLog.create({
+    user: req.user?._id,
+    status: "FAILED",
+    reason: error.message || "Unknown server error",
+  });
+
+  res.status(500).json({ message: "Payment verification failed" });
+}
+
 };
+
+
+// export const getPaymentLogs = async (req, res) => {
+//   const { status } = req.query;
+
+//   const filter = status ? { status } : {};
+
+//   const logs = await PaymentLog.find(filter)
+//     .populate("user", "name email")
+//     .sort({ createdAt: -1 });
+
+//   res.json(logs);
+// };
+
+
+// export const logFailedPayment = async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+//     const { razorpayOrderId, reason, amount } = req.body;
+
+//     await PaymentLog.create({
+//       user: userId,
+//       razorpayOrderId,
+//       amount,
+//       status: "FAILED",
+//       reason,
+//     });
+
+//     res.status(201).json({ message: "Failed payment logged" });
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to log payment" });
+//   }
+// };
+
+
+
+
 
