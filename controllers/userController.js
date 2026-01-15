@@ -331,10 +331,54 @@ export const changePassword = async (req, res) => {
 };
 
 // WhatsApp OTP via Gupshup
-// WhatsApp OTP via Gupshup
+// export const sendOtp = async (req, res) => {
+//   console.log("🔥 SEND OTP API HIT");
+
+//   try {
+//     const { mobile } = req.body; // ✅ FIX HERE
+//     console.log("📱 Mobile received:", mobile);
+
+//     if (!mobile) {
+//       return res.status(400).json({ message: "Mobile number is required" });
+//     }
+
+//     // 🧪 TEST MODE
+//     if (process.env.OTP_TEST_MODE === "true") {
+//       console.log("🧪 TEST OTP for", mobile, ": 123456");
+//       return res.status(200).json({
+//         message: "TEST MODE: OTP sent successfully",
+//       });
+//     }
+
+//     // real WhatsApp logic here...
+
+//   } catch (error) {
+//     console.log("❌ Error in sendOtp:", error);
+//     res.status(500).json({ message: "OTP send failed" });
+//   }
+// };
+
+
 export const sendOtp = async (req, res) => {
+  console.log("OTP_TEST_MODE =", process.env.OTP_TEST_MODE);
+
   try {
+    console.log("OTP_TEST_MODE =", process.env.OTP_TEST_MODE);
+
     const { mobile } = req.body;
+
+    // ✅ TEST MODE (NO GUPSHUP CALL)
+    // if (process.env.OTP_TEST_MODE === "true") {
+    //   console.log("🧪 TEST OTP for", mobile, ": 123456");
+
+    //   return res.status(200).json({
+    //     message: "TEST MODE: OTP sent successfully",
+    //   });
+    // }
+
+    // ===============================
+    // REAL WHATSAPP FLOW BELOW
+    // ===============================
 
     const user = await User.findOne({ mobile });
     if (!user) {
@@ -359,27 +403,26 @@ export const sendOtp = async (req, res) => {
       "https://api.gupshup.io/wa/api/v1/template/msg",
       new URLSearchParams({
         channel: "whatsapp",
-        source: process.env.GUPSHUP_SOURCE,      // 919811048392
+        source: process.env.GUPSHUP_SOURCE,
         destination: formattedMobile,
         template: JSON.stringify({
-          id: "otp_login",                       // TEMPLATE NAME
+          id: "otp_login",
           params: [
-            "thePDFzone",
+            process.env.GUPSHUP_APP_NAME, // ✅ use env
             otp,
-            "5"
-          ]
-        })
+            "5",
+          ],
+        }),
       }),
       {
         headers: {
           apikey: process.env.GUPSHUP_API_KEY,
-          "Content-Type": "application/x-www-form-urlencoded"
-        }
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
       }
     );
 
     res.json({ message: "OTP sent on WhatsApp" });
-
   } catch (error) {
     console.error("OTP ERROR:", error.response?.data || error.message);
     res.status(500).json({ message: "OTP send failed" });
@@ -390,8 +433,26 @@ export const sendOtp = async (req, res) => {
 
 
 
+
+
 export const verifyOtp = async (req, res) => {
   const { mobile, otp } = req.body;
+
+  // 🧪 TEST MODE (NO DB REQUIRED)
+  // if (process.env.OTP_TEST_MODE === "true") {
+  //   if (otp === "123456") {
+  //     return res.status(200).json({
+  //       message: "OTP verified successfully (TEST MODE)",
+  //     });
+  //   }
+  //   return res.status(400).json({
+  //     message: "Invalid OTP (TEST MODE)",
+  //   });
+  // }
+
+  // =========================
+  // 🔐 PRODUCTION MODE
+  // =========================
 
   // 1️⃣ Find OTP record
   const record = await Otp.findOne({ mobile });
@@ -432,11 +493,37 @@ export const verifyOtp = async (req, res) => {
   res.json({ message: "OTP verified successfully" });
 };
 
-
-
-
 export const resetPassword = async (req, res) => {
   const { mobile, newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({
+      message: "Password must be at least 6 characters",
+    });
+  }
+
+  // 🧪 TEST MODE (NO OTP DB CHECK)
+  // if (process.env.OTP_TEST_MODE === "true") {
+  //   const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  //   const user = await User.findOneAndUpdate(
+  //     { mobile },
+  //     { password: hashedPassword },
+  //     { new: true }
+  //   );
+
+  //   if (!user) {
+  //     return res.status(404).json({ message: "User not found" });
+  //   }
+
+  //   return res.json({
+  //     message: "Password reset successful (TEST MODE)",
+  //   });
+  // }
+
+  // =========================
+  // 🔐 PRODUCTION MODE
+  // =========================
 
   const otpRecord = await Otp.findOne({ mobile, verified: true });
   if (!otpRecord) {
@@ -455,6 +542,12 @@ export const resetPassword = async (req, res) => {
 
   res.json({ message: "Password reset successful" });
 };
+
+
+
+
+
+
 
 
 

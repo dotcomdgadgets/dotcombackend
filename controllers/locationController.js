@@ -3,31 +3,18 @@ import Location from "../models/locationModel.js";
 
 export const saveLocation = async (req, res) => {
   try {
-    const { lat, lon } = req.body;
+    const { latitude, longitude, address } = req.body;
 
-    if (!lat || !lon) {
-      return res.status(400).json({ message: "Latitude and Longitude required" });
+    if (!latitude || !longitude) {
+      return res.status(400).json({
+        message: "Latitude and Longitude required",
+      });
     }
 
-    // ✅ Fetch address from OpenCage API
-    const apiKey = process.env.OPENCAGE_API_KEY;
-    if (!apiKey) {
-      console.error("❌ OPENCAGE_API_KEY missing in environment variables");
-      return res.status(500).json({ message: "Server configuration error" });
-    }
-
-    const geoUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`;
-    const response = await axios.get(geoUrl);
-
-    console.log("🛰️ Geocoding response:", response.data.results[0]);
-
-    const formattedAddress = response.data.results[0]?.formatted || "Unknown location";
-
-    // ✅ Save to MongoDB
     const location = new Location({
-      latitude: lat,
-      longitude: lon,
-      address: formattedAddress,
+      latitude,
+      longitude,
+      address, // ✅ structured object
     });
 
     await location.save();
@@ -41,6 +28,7 @@ export const saveLocation = async (req, res) => {
     res.status(500).json({ message: "Error saving location" });
   }
 };
+
 
 
 export const getLocations = async (req, res) => {
